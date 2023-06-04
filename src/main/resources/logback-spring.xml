@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 引入 Spring Boot 默认的 logback XML 配置文件  -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- 从配置文件中读取值  -->
+    <springProperty scope="context" name="ORM.LEVEL" source="log.org.ktorm" defaultValue="info"/>
+    <springProperty scope="context" name="LOG_BASE_DIR" source="log.path" defaultValue="logs"/>
+
+    <!-- 日志输出位置，log目录下 -->
+    <property name="LOG_BASE_DIR" value="logs/%d{yyyy-MM-dd}"/>
+    <!-- 日志保存最长时间 -->
+    <property name="MAX_HISTORY" value="30"/>
+    <!-- 默认的控制台日志输出，一般生产环境都是后台启动，这个没太大作用 -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%date [%thread] %X{_xid} %-5level %logger{50}:%L - %msg%n</pattern>
+        </layout>
+    </appender>
+
+    <!--默认日志-->
+    <appender name="COMMON_DEFAULT_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 滚动记录文件，先将日志记录到指定文件，当符合某个条件时，将日志记录到其他文件。 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>${LOG_BASE_DIR}/common-default.log.gz</FileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <!-- 日志输出的文件的格式 -->
+        <encoder charset="UTF-8">
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!--默认错误日志-->
+    <appender name="COMMON_ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 滚动记录文件，先将日志记录到指定文件，当符合某个条件时，将日志记录到其他文件。 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>${LOG_BASE_DIR}/common-error.log.gz</FileNamePattern>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter"><!-- 只打印错误日志 -->
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <!-- 日志输出的文件的格式 -->
+        <encoder charset="UTF-8">
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+
+    <!-- 指定项目中某个包，当有日志操作行为时的日志记录级别 -->
+    <!-- 级别依次为【从高到低】：FATAL > ERROR > WARN > INFO > DEBUG > TRACE  -->
+    <!-- additivity=false 表示匹配之后，不再继续传递给其他的logger-->
+    <logger name="org.ktorm" level="${ORM.LEVEL}" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
+    <!-- 控制台输出日志级别 -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="COMMON_DEFAULT_FILE"/>
+        <appender-ref ref="COMMON_ERROR_FILE"/>
+    </root>
+</configuration>
